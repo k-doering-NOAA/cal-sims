@@ -62,9 +62,9 @@ parameters (VonBert K, length at min age, length at max age)
 
 ## Results
 
-![Relative error for growth parameters. Each scenario was run 5 times.](results/plots/growth_re.png)
+![Relative error for growth parameters. Each scenario was run 5 times.](../results/plots/growth_re.png)
 
-![SSB relative error. Each line represents 1 iteration.](results/plots/growth_re.png)
+![SSB relative error. Each line represents 1 iteration.](../results/plots/SSB_re.png)
 
 <!-- It may be useful to add a few key graphics here and a key table summary.-->
 
