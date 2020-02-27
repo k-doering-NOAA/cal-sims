@@ -57,9 +57,15 @@ parameters (VonBert K, length at min age, length at max age)
 
 ## Results
 
+Relative error for growth parameters. Each scenario was run 10 times:
+
 ![Relative error for growth parameters. Each scenario was run 10 times.](../results/plots/CAL_and_data_weight/growth_re_boxplot.png)
 
+Relative error for growth parameters plotted as a histogram. Each scenario was run 10 times:
+
 ![Relative error for growth parameters plotted as a histogram. Each scenario was run 10 times.](../results/plots/CAL_and_data_weight/growth_re_hist.png)
+
+DM had convergence issues, so take its results with a grain of salt:
 
 ![Max gradient by scenario. Note convergence issues with some Dirichlet Multinomial Scenarios.](../results/plots/CAL_and_data_weight/max_gradient_by_scen.png)
 
