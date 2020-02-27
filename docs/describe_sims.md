@@ -2,7 +2,7 @@
 ## What is this document?
 
 Here is a dynamic document to describe the current simulations being run
-in the script code/run\_sims.R. This will be updated as the project
+in the script code/test\_run\_CAL\_and\_dataweighting.R. This will be updated as the project
 progresses, but will be commited so it will be possible to review
 previous version of this document.
 
@@ -24,34 +24,29 @@ assessment, many questions still remain.
 
 We will start by attempting to address the question:
 
-  - How many years of CAL data do we need to get growth right?
+  - How does the data weighting method used affect growth estimation when using CAL data?
 
 ## Methods: simulation setup
 
 ### OM
 
 Basic cod model with 2 way trip for F. Get expected values for CAL data.
-No age comp marginals, only the length comp that goes with CAL
-estimates.
 
 ### Sampling to get data to feed into EM
 
-  - Different yrs of cal comp data. Start with none, then add on 2 yrs
-    of data each time, for about 5 different scenarios. Do initial runs
-    to see how this is going. 0 yrs, 2 yrs, 4 yrs, 6 yrs, 8 yrs of data.
-  - Leave sample sizes for each year the same for now. This is an
-    interaction we could also investigate.
+  - Use marginal age and length, as well as CAL data and an index.
+  - Use different data weighting methods by scenario: None (NO_DW), Dirichlet Multinomial (DM), Macallister-Ianelli (MI), and Francis (Fran). This is the only differences among the scenarios.
+  - No bias correction has been used.
 
 ### EM
 
 The EM has no misspecification relative to the OM, but estimate some
 growth parameters, starting them at the initial values from the EM.
-Perhaps everything else is fixed at true value to start?
 
 ### Running using ss3sim
 
-Get started on these by setting up these simulations and running 1
-iteration of each simulation version. Can then increase number of
+Get started on these by setting up these simulations and running 10
+iterations of each simulation version. Can then increase number of
 iterations and maybe change up scenarios if initial findings indicate a
 direction to go in.
 
@@ -62,9 +57,11 @@ parameters (VonBert K, length at min age, length at max age)
 
 ## Results
 
-![Relative error for growth parameters. Each scenario was run 5 times.](../results/plots/growth_re.png)
+![Relative error for growth parameters. Each scenario was run 10 times.](../results/plots/CAL_and_data_weight/growth_re_boxplot.png)
 
-![SSB relative error. Each line represents 1 iteration.](../results/plots/SSB_re.png)
+![Relative error for growth parameters plotted as a histogram. Each scenario was run 10 times.](../results/plots/CAL_and_data_weight/growth_re_hist.png)
+
+![Max gradient by scenario. Note convergence issues with some Dirichlet Multinomial Scenarios.](../results/plots/CAL_and_data_weight/max_gradient_by_scen.png)
 
 <!-- It may be useful to add a few key graphics here and a key table summary.-->
 
