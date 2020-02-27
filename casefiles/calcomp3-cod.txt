@@ -1,0 +1,8 @@
+# Note that Nsamp_ages must be less than Nsamp_lengths
+fleets; c(2)
+years; list(seq(30, 45, by = 5))
+Nsamp_lengths; list(30)
+Nsamp_ages; list(20)
+ESS_lengths; list(600)
+ESS_ages; list(500)
+method; 'simple_random' #other option: length_stratified
