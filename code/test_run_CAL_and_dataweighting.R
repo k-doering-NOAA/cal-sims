@@ -108,7 +108,7 @@ Fran_pars <- list(method = "Francis",
 wd <- getwd()
 setwd(out)
 ss3sim_base(iterations = 1:10,
-            scenarios = "D3-F0-cod-DM",
+            scenarios = "D3-F0-cod-DM-prior",
             f_params = args$F,
             index_params = args$index,
             lcomp_params = args$lcomp,
@@ -205,15 +205,28 @@ ss3sim_base(iterations = 1:10,
             print_logfile = TRUE)
 
 setwd(wd)
+# Note DM gives an error msg about data file having 2 sections...could not replicate
+# from building pkg locally and running. not sure why this is the case.
 # Get results ------------------------------------------------------------------
 
-#START HERE. need to check out why DM has 2 sections.
 get_results_all(directory = out, 
-                user_scenarios = paste0("D3-F0-cod-", c("DM", "MI", "Fran", 
+                user_scenarios = paste0("D3-F0-cod-", c("DM-prior", "MI", "Fran", 
                                                         "No_DW")))
 # read in csvs
 scal_res <- read.csv(file.path(out, "ss3sim_scalar.csv"), stringsAsFactors = FALSE)
 ts_res <- read.csv(file.path(out, "ss3sim_ts.csv"), stringsAsFactors = FALSE)
+
+# convergence diagnostics
+ggplot(scal_res, aes(x = max_grad)) + # Not really that helpful for determining convergence.
+  geom_histogram(fill = "#56B4E9", color = "black", bins = 10) +
+  facet_wrap(~scenario)+
+  theme_classic()
+ggsave(file.path(plot_path, "max_gradient_by_scen.png"), width = 12, height = 8, units = "in")
+
+convergence <- select(scal_res, ID, params_on_bound_em, params_stuck_high_em)
+write.csv(convergence, file.path(out, "D3-F0-cod-convergence.csv"))
+
+# Size_DblN_peak_Fishery(1) still on bounds.
 
 # calculate relative error for each growth parameter
 growth <- scal_res %>%
@@ -247,9 +260,4 @@ ggplot(growth, aes(rel_err)) +
   theme_classic()
 ggsave(file.path(plot_path, "growth_re_hist.png"), width = 12, height = 8, units = "in")
 
-# convergence diagnostics
-ggplot(scal_res, aes(x = max_grad)) +
-  geom_histogram(fill = "#56B4E9", color = "black", bins = 10) +
-  facet_wrap(~scenario)+
-  theme_classic()
-ggsave(file.path(plot_path, "max_gradient_by_scen.png"), width = 12, height = 8, units = "in")
+
