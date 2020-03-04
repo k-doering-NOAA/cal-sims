@@ -8,6 +8,7 @@ library(devtools)
 install_github("ss3sim/ss3sim@CAL") # use this branch for CAL
 library(ss3sim)
 library(tidyverse)
+library(r4ss)
 #source("code/funs/tune_comp.R")
 
 # create folders (if dont exist) -----------------------------------------------
@@ -56,9 +57,9 @@ writeLines(calcomp_case, file.path("casefiles", "calcomp3-cod.txt"))
 
 # length comp. Assume collected every 5 years for now. Required in CAL years.
 # Note need a separate file for each scenario although they are all the same
-len_case <- c("fleets; c(2)",
-              "Nsamp; list(100)",  # I think ss3sim treats this as number of fish? and not N tows?
-              "years; list(seq(30, 100, by = 5)) ")
+len_case <- c("fleets; c(1,2)",
+              "Nsamp; list(100,100)",  # I think ss3sim treats this as number of fish? and not N tows?
+              "years; list(seq(30, 100, by = 5), seq(30, 100, by = 5)) ")
 writeLines(len_case, file.path("casefiles", "lcomp3-cod.txt"))
 
 
@@ -108,7 +109,7 @@ Fran_pars <- list(method = "Francis",
 wd <- getwd()
 setwd(out)
 ss3sim_base(iterations = 1:10,
-            scenarios = "D3-F0-cod-DM-prior",
+            scenarios = "D3-F0-cod-DM",
             f_params = args$F,
             index_params = args$index,
             lcomp_params = args$lcomp,
@@ -210,20 +211,25 @@ setwd(wd)
 # Get results ------------------------------------------------------------------
 
 get_results_all(directory = out, 
-                user_scenarios = paste0("D3-F0-cod-", c("DM-prior", "MI", "Fran", 
+                user_scenarios = paste0("D3-F0-cod-", c("DM", "MI", "Fran", 
                                                         "No_DW")))
 # read in csvs
 scal_res <- read.csv(file.path(out, "ss3sim_scalar.csv"), stringsAsFactors = FALSE)
 ts_res <- read.csv(file.path(out, "ss3sim_ts.csv"), stringsAsFactors = FALSE)
 
 # convergence diagnostics
+
+
+plot_path <- file.path(out, "plots", "CAL_and_data_weight")
+dir.create(plot_path)
+
 ggplot(scal_res, aes(x = max_grad)) + # Not really that helpful for determining convergence.
   geom_histogram(fill = "#56B4E9", color = "black", bins = 10) +
   facet_wrap(~scenario)+
   theme_classic()
 ggsave(file.path(plot_path, "max_gradient_by_scen.png"), width = 12, height = 8, units = "in")
 
-convergence <- select(scal_res, ID, params_on_bound_em, params_stuck_high_em)
+convergence <- select(scal_res, ID, params_on_bound_em, params_stuck_high_em, params_stuck_low_em)
 write.csv(convergence, file.path(out, "D3-F0-cod-convergence.csv"))
 
 # Size_DblN_peak_Fishery(1) still on bounds.
@@ -244,10 +250,8 @@ growth <- scal_res %>%
            gather("var", "rel_err", 4:6)
   
 
-#Plot the relative error in the growth parameters
-plot_path <- file.path(out, "plots", "CAL_and_data_weight")
-dir.create(plot_path)
 
+#Plot the relative error in the growth parameters
 plot_scalar_boxplot(growth,  "scenario", "rel_err", horiz = "var", axes.free = F, ) +
   geom_hline(yintercept = 0, color = "blue")+
   theme_classic()
