@@ -34,14 +34,21 @@ Basic cod model with 2 way trip for F. Get expected values for CAL data.
 
 ### Sampling to get data to feed into EM
 
-  - Use marginal age and length, as well as CAL data and an index.
+  - Use marginal age and length, as well as CAL data and an index for the survey
+  - Use marginal length for the fishery
   - Use different data weighting methods by scenario: None (NO_DW), Dirichlet Multinomial (DM), Macallister-Ianelli (MI), and Francis (Fran). This is the only differences among the scenarios.
   - No bias correction has been used.
 
 ### EM
 
 The EM has no misspecification relative to the OM, but estimate some
-growth parameters, starting them at the initial values from the EM.
+growth parameters, starting them at the initial values from the EM. The 
+scenarios are:
+
+- DM: Dirichlet multinomial
+- Fran: Francis tuning
+- MI: MacAllister Ianelli tuning
+- No_DW: no comps data weighting done.
 
 ### Running using ss3sim
 
@@ -56,6 +63,12 @@ Initial performance metrics: relative error in growth
 parameters (VonBert K, length at min age, length at max age)
 
 ## Results
+
+### Convergence
+
+There are no parameters on bounds for all iterations of the scenarios.
+
+### Relative error
 
 Relative error for growth parameters. Each scenario was run 10 times:
 
