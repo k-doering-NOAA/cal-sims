@@ -81,6 +81,8 @@ Relative error for growth parameters plotted as a histogram. Each scenario was r
 
 ![Max gradient by scenario. Note convergence issues with some Dirichlet Multinomial Scenarios.](../results/plots/CAL_and_data_weight/max_gradient_by_scen.png)
 
+![Cumulative mean for each scenario for Von Bert K parameter.](../results/plots/CAL_and_data_weight/cummean_K.png)
+
 <!-- It may be useful to add a few key graphics here and a key table summary.-->
 
 <!-- If someone wants more details, they can look in the "results" folder to -->

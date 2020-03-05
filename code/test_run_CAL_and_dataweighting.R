@@ -5,7 +5,7 @@
 # that is better)
 # Load packages, scripts, set options ------------------------------------------
 library(devtools)
-install_github("ss3sim/ss3sim@CAL") # use this branch for CAL
+#install_github("ss3sim/ss3sim@CAL") # use this branch for CAL
 library(ss3sim)
 library(tidyverse)
 library(r4ss)
@@ -265,3 +265,20 @@ ggplot(growth, aes(rel_err)) +
 ggsave(file.path(plot_path, "growth_re_hist.png"), width = 12, height = 8, units = "in")
 
 
+# stability ----
+#uses ggplot, dplyr packages
+scal_res <- read.csv(file.path(out, "ss3sim_scalar.csv"), stringsAsFactors = FALSE)
+# have enough iterations been done?
+vonbert_select <- scal_res %>% 
+  select(iteration, scenario, VonBert_K_Fem_GP_1_em) %>% 
+  arrange(scenario, iteration) %>% 
+  group_by(scenario) %>% 
+  mutate(cummean_K = cummean(VonBert_K_Fem_GP_1_em)) %>% 
+  ungroup()
+
+ggplot(vonbert_select, aes(x = iteration, y = cummean_K))+
+  geom_line(aes(color = scenario))+
+  geom_point(aes(color = scenario)) +
+  #ylim(0, 0.25)+ # use if want to set manual limits 
+  theme_classic()
+ggsave(file.path(plot_path, "cummean_K.png"), width = 12, height = 8, units = "in")
