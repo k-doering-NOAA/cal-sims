@@ -2,84 +2,56 @@
 
 # Load packages, scripts, set options ------------------------------------------
 #library(devtools)
-#install_github("ss3sim/ss3sim@CAL") # use this branch for CAL
+#install_github("ss3sim/ss3sim@e898580")
+#install_github("r4ss/r4ss@2d7044e")
 library(ss3sim)
 
 # create folders (if dont exist) -----------------------------------------------
-dir.create("casefiles")
-dir.create("code")
-dir.create("docs")
-dir.create("results")
+dir.create("results_run_sims")
 
 # Change pars here -------------------------------------------------------------
 # Any fixed values that need to be changed should be dones so here, so that they
 # are not lost futher down in the script.
 # put output in this folder
-out <- normalizePath("results")
+out <- normalizePath("results_run_sims")
 
-# Set up the casefiles ---------------------------------------------------------
-# F. Want a 2 way trip, but these values are somewhat arbitrary currently.
-F_case <- c("# description: 2 way trip", 
-            "years; 1:100", 
-            "fisheries; 1",
-            "fvals; c(rep(0,25), seq(0.005, 0.15, length.out =  50), seq(0.15, 0.06, length.out = 25))")
-writeLines(F_case, con = file.path("casefiles", "F0-cod.txt"))
-# index. Assume a value for every other year for now? Need to check if this is 
-# realistic. Only include survey obs
-index_case <- c("fleets; c(2)", 
-                "years; list(1:100)", 
-                "sds_obs; list(0.4)") # is this a good default value?
-writeLines(index_case, con = file.path("casefiles", "index0-cod.txt"))
-writeLines(index_case, con = file.path("casefiles", "index1-cod.txt"))
-writeLines(index_case, con = file.path("casefiles", "index2-cod.txt"))
-# age comp. Don't want for now, so make a null case.
-# will need to make different cases depending on how much CAL data is included.
+# create the df scenarios ----
+# make a default data frame
+df_orig <- setup_scenarios_defaults()
+df <- df_orig
+for(i in 1:2) {
+  df <- rbind(df, df_orig)
+}
 
-# scenario 0: Assume all marginals every 5 yrs.
-agecomp_case <- c("# description: Null case", 
-                  "Nsamp; list(10)", 
-                  "fleets; c(2)", 
-                  "years; list(seq(30, 100, by = 5))", 
-                  "cpar; NULL")
-writeLines(agecomp_case, con = file.path("casefiles", "agecomp0-cod.txt"))
-# scenario 1: 2 yrs CAL data, rest of years marginal age comps.
-agecomp_case[4] <- "years; list(seq(40,100, by = 5))" #maybe would be better not at beginning of time series?
-writeLines(agecomp_case, con = file.path("casefiles", "agecomp1-cod.txt"))
-# Scenario 2: 4 years CAL data, rest of years marginal age comps
-agecomp_case[4] <- "years; list(seq(50,100, by = 5))" #maybe would be better not at beginning of time series?
-writeLines(agecomp_case, con = file.path("casefiles", "agecomp2-cod.txt"))
-# calcomp
-# Scenario 0: none needed (or can create a null scenario)
-calcomp_case <- c("fleets; NULL",
-                  "Nsamp; NULL", 
-                  "years; NULL")
-writeLines(calcomp_case, file.path("casefiles", "calcomp0-cod.txt"))
-# Scenario 1:
-calcomp_case <- c("fleets; c(2)", 
-                  "Nsamp; list(20)", # what is a realistic value for this?
-                  "years; list(c(30, 35))")
-writeLines(calcomp_case, file.path("casefiles", "calcomp1-cod.txt"))
-# Scenario 2:
-calcomp_case[3] <- "years; list(c(30, 35, 40, 45))"
-writeLines(calcomp_case, file.path("casefiles", "calcomp2-cod.txt"))
+# edit the data frame
+# use the same f for each one. Want a 2 way trip, but these values are somewhat arbitrary currently.
+df[, "cf.fvals.1"] # use this default
 
-# length comp. Assume collected every 5 years for now. Required in CAL years.
-# Note need a separate file for each scenario although they are all the same
-len_case <- c("fleets; c(2)",
-              "Nsamp; list(100)",  # I think ss3sim treats this as number of fish? and not N tows?
-              "years; list(seq(30, 100, by = 5)) ")
-writeLines(len_case, file.path("casefiles", "lcomp0-cod.txt"))
-writeLines(len_case, file.path("casefiles", "lcomp1-cod.txt"))
-writeLines(len_case, file.path("casefiles", "lcomp2-cod.txt"))
+# use the same index for each 1
+df$si.years.2 <- "seq(50, 100, by = 2)"
+df$si.sds_obs.2 <- "0.4"
 
-# Set up for simulations -------------------------------------------------------
-# use absolute paths so it doesn't matter what the wd is.
-scen <- expand_scenarios(cases = list(D = 0:2, F = 0), 
-                         species = "cod")
-extdat <- system.file("extdata", package = "ss3sim")
-om <- file.path(extdat, "models", "cod-om")
-em <- file.path(extdat, "models", "cod-em")
-case_folder <- normalizePath("casefiles", mustWork = TRUE) # get the absolute path.
+# length comp
+df$sl.Nsamp.1 <- NULL
+df$sl.years.1 <- NULL
+df$sl.Nsamp.2 <- 100
+df$sl.years.2 <- "seq(30, 100, by = 5)"
+
+# age comp
+df$sa.Nsamp.2 <- c("10","10", "10")
+df$sa.years.2 <- c("40", "seq(40, 100, by = 5)", 
+                   "seq(50, 100, by = 5)")
+
+# cal comp : change across cases
+df$sc.Nsamp_lengths.2 <- "20"
+df$sc.Nsamp_ages.2 <- "10"
+df$sc.years.2 <- c("30", "c(30, 35)", "c(30, 35, 40, 45)")
+
+# scenario options
+df[, "bias_adjust"] <- FALSE
+df[, "hess_always"] <- FALSE
+df[, "scenarios"] <- c("scen_0", "scen_1", "scen_2")
+
 # Run simulations --------------------------------------------------------------
 #run ss3sim in a different directory, but make sure to reset the wd on exit.
 # made this into a function mostly so that changing back the wd is not forgotten!
@@ -87,23 +59,15 @@ case_folder <- normalizePath("casefiles", mustWork = TRUE) # get the absolute pa
 # ' use run ss3sim when changing wd
 #' @param results_wd The working directory to run the ss3sim analysis in
 #' @noRd
-run_analysis <- function(n_iter, scen, case_folder, om, em, case_files, results_wd) {
+run_analysis <- function(n_iter, simdf, results_wd) {
   wd <- getwd()
   setwd(results_wd)
   on.exit(setwd(wd), add = TRUE)
-  run_ss3sim(iterations = n_iter,
-             scenarios = scen,
-             case_folder = case_folder,
-             om_dir = om,
-             em_dir = em,
-             case_files = case_files
-  )
+  run_ss3sim(iterations = n_iter, simdf = simdf)
 }
 
-run_analysis(n_iter = 1:5, scen = scen, case_folder = case_folder, om = om,
-             em = em, 
-             case_files = list(F = "F",
-                               D = c("index", "lcomp", "agecomp", "calcomp")), 
+run_analysis(n_iter = 1, 
+             simdf = df,
              results_wd = out)
 
 # Get results ------------------------------------------------------------------
