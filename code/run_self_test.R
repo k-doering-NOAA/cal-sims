@@ -77,13 +77,18 @@ g_boxplot <- plot_boxplot(growth_error_tidy,
                                  x = "scenario",
                                  y = "Relative_Error",
                                  horiz = "Parameter")
-g_boxplot + theme_classic()
+g_boxplot + theme_classic(base_size = 10)
 ggsave(file.path(plot_path, "growth_re.png"), 
        width = 7, height = 5, units = "in")
 
 # try some other plots
-SSB_plot <- plot_lines(ts_dat, y = "SpawnBio_re", vert = "scenario")
-SSB_plot + theme_classic()
+# add max gradient to ts plot
+tmp_maxgrad <- scalar_dat %>% 
+  select(iteration, scenario, max_grad)
+ts_dat_max_grad <- left_join(ts_dat, tmp_maxgrad)
+SSB_plot <- plot_lines(ts_dat_max_grad, y = "SpawnBio_re", vert = "scenario", 
+                       color = "max_grad")
+SSB_plot + theme_classic(base_size = 14)
 ggsave(file.path(plot_path, "SSB_re.png"), width = 7, height = 5,
        units = "in")
 
