@@ -59,3 +59,44 @@ r4ss::SS_plots(output, verbose = FALSE)
 # too strict of sampling on the index caused problems? Maybe lead to not enough
 # contrast in data?
 # params on bounds: this happens sometimes.
+
+# to do next: look at 10 iterations and what is going on.
+
+# Get results ------------------------------------------------------------------
+res <- get_results_all(directory = out)
+
+# Check EM convergence -----
+# make sure aren't giant
+res$scalar[res$scalar$model_run == "em","max_grad"]
+# look at params on bounds
+
+#some params are stuck low, which may be an issue.
+# looks like it is true that these params aren't on bounds, but are fairly low -
+# I don't think this should be an issue, tho?
+res$scalar[res$scalar$model_run == "em",
+   c("iteration", "scenario", "params_on_bound", "params_stuck_low",
+     "params_stuck_high")]
+
+# make plots ------
+plot_path <- file.path(out, "plots")
+dir.create(plot_path)
+scalar_dat_wide <- convert_to_wide(res$scalar)
+ts_dat_wide <- convert_to_wide(res$ts)
+scalar_dat_wide <- calculate_re(scalar_dat_wide, add = TRUE)
+ts_dat_wide <- calculate_re(ts_dat_wide, add = TRUE)
+
+# get error for each scenario ----
+growth_error <- scalar_dat_wide[, c("ID", "scenario","VonBert_K_Fem_GP_1_re", 
+                               "L_at_Amin_Fem_GP_1_re", "L_at_Amax_Fem_GP_1_re")]
+growth_error$scenario_fac <- factor(growth_error$scenario, levels = unique(growth_error$scenario))
+growth_error_tidy <- growth_error %>% 
+  select(ID, scenario_fac, scenario, VonBert_K_Fem_GP_1_re, 
+         L_at_Amin_Fem_GP_1_re, L_at_Amax_Fem_GP_1_re) %>% 
+  gather("Parameter", "Relative_Error", 4:6)
+
+g_boxplot <- plot_boxplot(growth_error_tidy,
+                          x = "scenario",
+                          y = "Relative_Error",
+                          horiz = "Parameter")
+g_boxplot + theme_classic(base_size = 10)
+
