@@ -15,22 +15,35 @@ dir.create(out)
 
 # create the df scenarios ----
 df <- setup_scenarios_defaults()
-df[,"cf.fvals.1"] <- "rnorm(75, 0.2, 0.08)"
-df[, "co.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1', 'CV_young_Fem_GP_1','CV_old_Fem_GP_1')"
+set.seed(123)
+df[,"cf.years.1"] <- "26:100"
+# for now, use same values across iterations.
+df[,"cf.fvals.1"] <- paste0("c(",paste0(rnorm(75, 0.2, 0.08), collapse = ", "),
+                            ")")
+df[, "co.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1', 'CV_young_Fem_GP_1','CV_old_Fem_GP_1','SizeSel_P5_Fishery(1)', 'SizeSel_P6_Fishery(1)')"
 # is von bert k correct?
-df[, "co.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65,0.1,0.1)"
-df[, "ce.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1','CV_young_Fem_GP_1','CV_old_Fem_GP_1')"
-df[, "ce.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65, 0.1, 0.1)"
-df[, "ce.par_phase"] <- "c(-1, -1, -1, 1, 2, 2, 2, -1, -1)"
+df[, "co.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65,0.1,0.1, 4.99, 4.99)"
+df[, "ce.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1','CV_young_Fem_GP_1','CV_old_Fem_GP_1','SizeSel_P5_Fishery(1)', 'SizeSel_P6_Fishery(1)', 'SizeSel_P1_Fishery(1)', 'SizeSel_P2_Fishery(1)', 'SizeSel_P3_Fishery(1)', 'SizeSel_P4_Fishery(1)')"
+df[, "ce.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65, 0.1, 0.1, 4.99, 4.99, 50.8, -3, 5.1, 15)"
+df[, "ce.par_phase"] <- "c(-1, -1, -1, 1, 2, 2, 2, -1, -1, -1, -1, -1, -1, -1, -1)"
 
 df[, grep("sl", names(df), value = TRUE)] <- NULL
 df[, grep("sa\\.[[:alpha:]]*\\.2", names(df), value = TRUE)] <- NULL
-df[,"sc.years.1"] <- 50
-df[,"sc.Nsamp_lengths.1"]  <- 50
-df[,"sc.Nsamp_ages.1"] <- 25
-df[, "scenarios"] <- c("piner_1")
+df[,"sc.years.1"] <- 100
+df[,"sc.Nsamp_lengths.1"]  <- 250
+df[,"sc.Nsamp_ages.1"] <- 250
+df[, "scenarios"] <- c("piner_250")
 df[, "bias_adjust"] <- FALSE
 df[, "hess_always"] <- FALSE
+
+df <- rbind(df,df)
+# add the second scenario
+df[2, "scenarios"] <- "piner_4000"
+df[2,"sc.Nsamp_lengths.1"] <- 4000 
+df[2, "sc.Nsamp_ages.1"] <- 4000
+
+# piner et al sample size is 250, 500, 1000, 2000, and 4000 individ-uals). Note these
+# were aonly taken for 1 year o f data.
 
 # Run simulations --------------------------------------------------------------
 #run ss3sim in a different directory, but make sure to reset the wd on exit.
@@ -50,9 +63,7 @@ scen_name <- run_analysis(iter_vec = 1:10,
                           simdf = df,
                           results_wd = out)
 
-# check out scenario to see if it has converged
-output <- r4ss::SS_output(file.path(out, scen_name, "3", "em"), verbose = FALSE)
-r4ss::SS_plots(output, verbose = FALSE)
+
 
 # Notes
 # Needed to change which params were estimated and which weren't in order to get convergence
@@ -67,7 +78,7 @@ res <- get_results_all(directory = out)
 
 # Check EM convergence -----
 # make sure aren't giant
-res$scalar[res$scalar$model_run == "em","max_grad"]
+unique(res$scalar[res$scalar$model_run == "em","max_grad"] > 1)
 # look at params on bounds
 
 #some params are stuck low, which may be an issue.
