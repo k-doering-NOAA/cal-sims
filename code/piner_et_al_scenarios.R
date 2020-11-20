@@ -2,8 +2,8 @@
 
 # Load packages, scripts, set options ----
 
-#devtools::install_github("ss3sim/ss3sim@6a31af3")
-#devtools::install_github("r4ss/r4ss@d4430de")
+devtools::install_github("ss3sim/ss3sim@f5a0628")
+devtools::install_github("r4ss/r4ss@96dfa2e")
 library(ss3sim)
 library(dplyr)
 library(tidyr)
