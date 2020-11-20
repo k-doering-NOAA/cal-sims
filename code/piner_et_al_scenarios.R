@@ -22,9 +22,9 @@ df[,"cf.fvals.1"] <- paste0("c(",paste0(rnorm(75, 0.2, 0.08), collapse = ", "),
                             ")")
 df[, "co.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1', 'CV_young_Fem_GP_1','CV_old_Fem_GP_1','SizeSel_P5_Fishery(1)', 'SizeSel_P6_Fishery(1)')"
 # is von bert k correct?
-df[, "co.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65,0.1,0.1, 4.99, 4.99)"
+df[, "co.par_int"] <- "c(0.3, 0.75, 0.6, 9, 15, 50, 0.3/1.65,0.1,0.1, 4.99, 4.99)"
 df[, "ce.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1','CV_young_Fem_GP_1','CV_old_Fem_GP_1','SizeSel_P5_Fishery(1)', 'SizeSel_P6_Fishery(1)', 'SizeSel_P1_Fishery(1)', 'SizeSel_P2_Fishery(1)', 'SizeSel_P3_Fishery(1)', 'SizeSel_P4_Fishery(1)')"
-df[, "ce.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65, 0.1, 0.1, 4.99, 4.99, 50.8, -3, 5.1, 15)"
+df[, "ce.par_int"] <- "c(0.3, 0.75, 0.6, 9, 15, 50, 0.3/1.65, 0.1, 0.1, 4.99, 4.99, 50.8, -3, 5.1, 15)"
 df[, "ce.par_phase"] <- "c(-1, -1, -1, 1, 2, 2, 2, -1, -1, -1, -1, -1, -1, -1, -1)"
 
 df[, grep("sl", names(df), value = TRUE)] <- NULL
@@ -66,7 +66,7 @@ scen_name <- run_analysis(iter_vec = 1:10,
 
 
 # Notes
-# Needed to change which params were estimated and which weren't in order to get convergence
+# Needed to change which params were estimated and which weren't in order to get convergences
 # too strict of sampling on the index caused problems? Maybe lead to not enough
 # contrast in data?
 # params on bounds: this happens sometimes.
@@ -76,10 +76,18 @@ scen_name <- run_analysis(iter_vec = 1:10,
 # Get results ------------------------------------------------------------------
 res <- get_results_all(directory = out)
 
+res <- vector(mode = "list", length = 2)
+res[[1]] <- read.csv( file.path(out, "ss3sim_scalar.csv"))
+res[[2]] <- read.csv(file.path(out, "ss3sim_ts.csv"))
+names(res) <-  c("scalar", "ts")
+              
+
+
 # Check EM convergence -----
 # make sure aren't giant
-unique(res$scalar[res$scalar$model_run == "em","max_grad"] > 1)
+res$scalar[res$scalar$model_run == "em","max_grad"] > 1
 # look at params on bounds
+# on iteration has a big gradient, but SSB doesn't look that off.
 
 #some params are stuck low, which may be an issue.
 # looks like it is true that these params aren't on bounds, but are fairly low -
@@ -87,6 +95,14 @@ unique(res$scalar[res$scalar$model_run == "em","max_grad"] > 1)
 res$scalar[res$scalar$model_run == "em",
    c("iteration", "scenario", "params_on_bound", "params_stuck_low",
      "params_stuck_high")]
+
+# Look at SSB - how off is it? - tracking pretty well, so these sims aren't so bad.
+ggplot(dat = res$ts, aes(x = year, y = SpawnBio)) +
+  geom_line(aes(color = model_run)) +
+  facet_grid(rows = vars(scenario), cols = vars(iteration))
+
+# make an ss output plot for reference to get a feel fror how these sims ran....
+r4ss::SS_plots(r4ss::SS_output(file.path(out, "piner_250", "1", "em"), verbose = FALSE, printstats = FALSE), verbose = FALSE)
 
 # make plots ------
 plot_path <- file.path(out, "plots")
@@ -99,6 +115,7 @@ ts_dat_wide <- calculate_re(ts_dat_wide, add = TRUE)
 # get error for each scenario ----
 growth_error <- scalar_dat_wide[, c("ID", "scenario","VonBert_K_Fem_GP_1_re", 
                                "L_at_Amin_Fem_GP_1_re", "L_at_Amax_Fem_GP_1_re")]
+
 growth_error$scenario_fac <- factor(growth_error$scenario, levels = unique(growth_error$scenario))
 growth_error_tidy <- growth_error %>% 
   select(ID, scenario_fac, scenario, VonBert_K_Fem_GP_1_re, 
@@ -109,5 +126,5 @@ g_boxplot <- plot_boxplot(growth_error_tidy,
                           x = "scenario",
                           y = "Relative_Error",
                           horiz = "Parameter")
-g_boxplot + theme_classic(base_size = 10)
+g_boxplot + theme_classic(base_size = 15)
 
