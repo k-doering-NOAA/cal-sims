@@ -1,3 +1,0 @@
-fleets; c(2)
-Nsamp; list(20)
-years; list(c(30, 35, 40, 45))

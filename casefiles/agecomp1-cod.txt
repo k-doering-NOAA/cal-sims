@@ -1,5 +1,0 @@
-# description: Null case
-Nsamp; list(10)
-fleets; c(2)
-years; list(seq(40,100, by = 5))
-cpar; NULL

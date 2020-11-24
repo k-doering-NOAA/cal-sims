@@ -1,3 +1,0 @@
-fleets; c(1,2)
-Nsamp; list(100,100)
-years; list(seq(30, 100, by = 5), seq(30, 100, by = 5)) 
