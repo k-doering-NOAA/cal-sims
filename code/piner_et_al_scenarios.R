@@ -2,8 +2,8 @@
 
 # Load packages, scripts, set options ----
 
-# devtools::install_github("ss3sim/ss3sim@f5a0628")
-# devtools::install_github("r4ss/r4ss@96dfa2e")
+devtools::install_github("ss3sim/ss3sim@f5a0628")
+devtools::install_github("r4ss/r4ss@96dfa2e")
 library(ss3sim)
 library(dplyr)
 library(tidyr)
@@ -32,13 +32,13 @@ df[, grep("sa\\.[[:alpha:]]*\\.2", names(df), value = TRUE)] <- NULL
 df[,"sc.years.1"] <- 100
 df[,"sc.Nsamp_lengths.1"]  <- 250
 df[,"sc.Nsamp_ages.1"] <- 250
-df[, "scenarios"] <- c("piner_250_bias_adj")
-df[, "bias_adjust"] <- TRUE
+df[, "scenarios"] <- c("piner_250")
+df[, "bias_adjust"] <- FALSE
 df[, "hess_always"] <- FALSE
 
 df <- rbind(df,df)
 # add the second scenario
-df[2, "scenarios"] <- "piner_4000_bias_adj"
+df[2, "scenarios"] <- "piner_4000"
 df[2,"sc.Nsamp_lengths.1"] <- 4000 
 df[2, "sc.Nsamp_ages.1"] <- 4000
 
@@ -62,6 +62,8 @@ run_analysis <- function(iter_vec, simdf, results_wd) {
 scen_name <- run_analysis(iter_vec = 1:10,
                           simdf = df,
                           results_wd = out)
+
+
 
 # Notes
 # Needed to change which params were estimated and which weren't in order to get convergences
@@ -97,11 +99,10 @@ res$scalar[res$scalar$model_run == "em",
 # Look at SSB - how off is it? - tracking pretty well, so these sims aren't so bad.
 ggplot(dat = res$ts, aes(x = year, y = SpawnBio)) +
   geom_line(aes(color = model_run)) +
-  facet_grid(rows = vars(scenario), cols = vars(iteration))+
-  theme_classic()
+  facet_grid(rows = vars(scenario), cols = vars(iteration))
 
 # make an ss output plot for reference to get a feel fror how these sims ran....
-r4ss::SS_plots(r4ss::SS_output(file.path(out, "piner_250_bias_adj", "1", "em"), verbose = FALSE, printstats = FALSE), verbose = FALSE)
+r4ss::SS_plots(r4ss::SS_output(file.path(out, "piner_250", "1", "em"), verbose = FALSE, printstats = FALSE), verbose = FALSE)
 
 # make plots ------
 plot_path <- file.path(out, "plots")
