@@ -5,6 +5,7 @@
 devtools::install_github("ss3sim/ss3sim@f5a0628")
 devtools::install_github("r4ss/r4ss@96dfa2e")
 library(ss3sim)
+library(r4ss)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -12,19 +13,30 @@ library(ggplot2)
 # create folders (if dont exist) ----
 out <- "results_piner"
 dir.create(out)
+mod_files_path <- "mod_files"
+dir.create(mod_files_path)
+
+# create the model to use -----
+om_init_path <- system.file("extdata", "models", "cod-om", package = "ss3sim")
+r4ss::copy_SS_inputs(dir.old = om_init_path, dir.new = file.path(mod_files_path, "cod-om-new-bins"))
+
+dat <- SS_readdat(file.path(mod_files_path, "cod-om-new-bins", "codOM.dat"),
+                  verbose = FALSE)
+dat$minimum_size <- 1
+SS_writedat(dat, outfile = file.path(mod_files_path, "cod-om-new-bins", "codOM.dat"), 
+            overwrite = TRUE, verbose = FALSE)
 
 # create the df scenarios ----
 df <- setup_scenarios_defaults()
 set.seed(123)
 df[,"cf.years.1"] <- "26:100"
 # for now, use same values across iterations.
-df[,"cf.fvals.1"] <- paste0("c(",paste0(rnorm(75, 0.2, 0.08), collapse = ", "),
-                            ")")
+df[,"cf.fvals.1"] <- "rep(0.2, 75)"
 df[, "co.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1', 'CV_young_Fem_GP_1','CV_old_Fem_GP_1','SizeSel_P5_Fishery(1)', 'SizeSel_P6_Fishery(1)')"
 # is von bert k correct?
-df[, "co.par_int"] <- "c(0.3, 0.75, 0.6, 9, 15, 50, 0.3/1.65,0.1,0.1, 4.99, 4.99)"
+df[, "co.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65,0.1,0.1, 4.99, 4.99)"
 df[, "ce.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1','CV_young_Fem_GP_1','CV_old_Fem_GP_1','SizeSel_P5_Fishery(1)', 'SizeSel_P6_Fishery(1)', 'SizeSel_P1_Fishery(1)', 'SizeSel_P2_Fishery(1)', 'SizeSel_P3_Fishery(1)', 'SizeSel_P4_Fishery(1)')"
-df[, "ce.par_int"] <- "c(0.3, 0.75, 0.6, 9, 15, 50, 0.3/1.65, 0.1, 0.1, 4.99, 4.99, 50.8, -3, 5.1, 15)"
+df[, "ce.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65, 0.1, 0.1, 4.99, 4.99, 50.8, -3, 5.1, 15)"
 df[, "ce.par_phase"] <- "c(-1, -1, -1, 1, 2, 2, 2, -1, -1, -1, -1, -1, -1, -1, -1)"
 
 df[, grep("sl", names(df), value = TRUE)] <- NULL
@@ -35,6 +47,9 @@ df[,"sc.Nsamp_ages.1"] <- 250
 df[, "scenarios"] <- c("piner_250")
 df[, "bias_adjust"] <- FALSE
 df[, "hess_always"] <- FALSE
+om_path <- normalizePath(file.path('mod_files', 'cod-om-new-bins'), winslash = "/")
+df[,"om"] <- om_path
+df[,"em"] <- system.file("extdata", "models", "cod-em", package = "ss3sim")
 
 df <- rbind(df,df)
 # add the second scenario
@@ -62,8 +77,6 @@ run_analysis <- function(iter_vec, simdf, results_wd) {
 scen_name <- run_analysis(iter_vec = 1:10,
                           simdf = df,
                           results_wd = out)
-
-
 
 # Notes
 # Needed to change which params were estimated and which weren't in order to get convergences
@@ -102,6 +115,7 @@ ggplot(dat = res$ts, aes(x = year, y = SpawnBio)) +
   facet_grid(rows = vars(scenario), cols = vars(iteration))
 
 # make an ss output plot for reference to get a feel fror how these sims ran....
+r4ss::SS_plots(r4ss::SS_output(file.path(out, "piner_250", "1", "om"), verbose = FALSE, printstats = FALSE), verbose = FALSE)
 r4ss::SS_plots(r4ss::SS_output(file.path(out, "piner_250", "1", "em"), verbose = FALSE, printstats = FALSE), verbose = FALSE)
 
 # make plots ------
