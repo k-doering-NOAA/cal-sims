@@ -117,8 +117,6 @@ ggplot(dat = res$ts, aes(x = year, y = SpawnBio)) +
   facet_grid(rows = vars(scenario), cols = vars(iteration))
 
 # make an ss output plot for reference to get a feel fror how these sims ran....
-r4ss::SS_plots(r4ss::SS_output(file.path(out, "piner_250", "1", "om"), verbose = FALSE, printstats = FALSE), verbose = FALSE)
-r4ss::SS_plots(r4ss::SS_output(file.path(out, "piner_250", "1", "em"), verbose = FALSE, printstats = FALSE), verbose = FALSE)
 
 # make plots ------
 plot_path <- file.path(out, "plots")
