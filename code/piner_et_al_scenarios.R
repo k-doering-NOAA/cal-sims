@@ -2,8 +2,8 @@
 
 # Load packages, scripts, set options ----
 
-devtools::install_github("ss3sim/ss3sim@f5a0628")
-devtools::install_github("r4ss/r4ss@96dfa2e")
+devtools::install_github("ss3sim/ss3sim@bb3ebc0")
+devtools::install_github("r4ss/r4ss@99c3f03")
 library(ss3sim)
 library(r4ss)
 library(dplyr)
@@ -23,6 +23,8 @@ r4ss::copy_SS_inputs(dir.old = om_init_path, dir.new = file.path(mod_files_path,
 dat <- SS_readdat(file.path(mod_files_path, "cod-om-new-bins", "codOM.dat"),
                   verbose = FALSE)
 dat$minimum_size <- 1
+dat$maximum_size <- 71
+dat$lbin_vector <- seq(20, 71, by = 3)
 SS_writedat(dat, outfile = file.path(mod_files_path, "cod-om-new-bins", "codOM.dat"), 
             overwrite = TRUE, verbose = FALSE)
 
