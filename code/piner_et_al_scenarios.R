@@ -2,8 +2,8 @@
 
 # Load packages, scripts, set options ----
 
-devtools::install_github("ss3sim/ss3sim@bb3ebc0")
-devtools::install_github("r4ss/r4ss@99c3f03")
+# devtools::install_github("ss3sim/ss3sim@bb3ebc0")
+# devtools::install_github("r4ss/r4ss@9ed9543")
 library(ss3sim)
 library(r4ss)
 library(dplyr)
@@ -16,7 +16,7 @@ dir.create(out)
 mod_files_path <- "mod_files"
 dir.create(mod_files_path)
 
-# create the model to use -----
+# create the om model to use -----
 om_init_path <- system.file("extdata", "models", "cod-om", package = "ss3sim")
 r4ss::copy_SS_inputs(dir.old = om_init_path, dir.new = file.path(mod_files_path, "cod-om-new-bins"))
 
@@ -24,38 +24,60 @@ dat <- SS_readdat(file.path(mod_files_path, "cod-om-new-bins", "codOM.dat"),
                   verbose = FALSE)
 dat$minimum_size <- 1
 dat$maximum_size <- 71
-dat$lbin_vector <- seq(20, 71, by = 3)
+dat$lbin_vector <- seq(11, 71, by = 3)
 SS_writedat(dat, outfile = file.path(mod_files_path, "cod-om-new-bins", "codOM.dat"), 
             overwrite = TRUE, verbose = FALSE)
+# modify selectivity pattern for om
+om_ctl <- SS_readctl(file.path(mod_files_path, "cod-om-new-bins", "codOM.ctl"), 
+                     verbose = FALSE, use_datlist = TRUE, datlist = dat)
+om_ctl[["size_selex_types"]]["Fishery", "Pattern"] <- 0 # change to constant
+par_rows_to_rm <- grep("Fishery", rownames(om_ctl[["size_selex_parms"]]))
+om_ctl[["size_selex_parms"]] <- om_ctl[["size_selex_parms"]][-par_rows_to_rm, ]
+SS_writectl(om_ctl, file.path(mod_files_path, "cod-om-new-bins", "codOM.ctl"), 
+            verbose = FALSE, overwrite = TRUE)
+
+# create the em model to use ----
+
+em_init_path <- system.file("extdata", "models", "cod-em", package = "ss3sim")
+r4ss::copy_SS_inputs(dir.old = em_init_path, dir.new = file.path(mod_files_path, "cod-em-constant-sel"))
+em_ctl <- SS_readctl(file.path(mod_files_path, "cod-em-constant-sel", "codEM.ctl"), 
+           verbose = FALSE, use_datlist = TRUE, datlist = dat)
+# edit next lines.
+em_ctl[["size_selex_types"]]["Fishery", "Pattern"] <- 0 # change to constant
+em_par_rows_to_rm <- grep("Fishery", rownames(em_ctl[["size_selex_parms"]]))
+em_ctl[["size_selex_parms"]] <- em_ctl[["size_selex_parms"]][-em_par_rows_to_rm, ]
+SS_writectl(em_ctl, file.path(mod_files_path, "cod-em-constant-sel", "codEM.ctl"), 
+            verbose = FALSE, overwrite = TRUE)
 
 # create the df scenarios ----
 df <- setup_scenarios_defaults()
 set.seed(123)
 df[,"cf.years.1"] <- "26:100"
 # for now, use same values across iterations.
-df[,"cf.fvals.1"] <- "rep(0.2, 75)"
-df[, "co.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1', 'CV_young_Fem_GP_1','CV_old_Fem_GP_1','SizeSel_P5_Fishery(1)', 'SizeSel_P6_Fishery(1)')"
+df[,"cf.fvals.1"] <- "rep(0.1, 75)"
+df[, "co.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1', 'CV_young_Fem_GP_1','CV_old_Fem_GP_1')"
 # is von bert k correct?
-df[, "co.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65,0.1,0.1, 4.99, 4.99)"
-df[, "ce.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1','CV_young_Fem_GP_1','CV_old_Fem_GP_1','SizeSel_P5_Fishery(1)', 'SizeSel_P6_Fishery(1)', 'SizeSel_P1_Fishery(1)', 'SizeSel_P2_Fishery(1)', 'SizeSel_P3_Fishery(1)', 'SizeSel_P4_Fishery(1)')"
-df[, "ce.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65, 0.1, 0.1, 4.99, 4.99, 50.8, -3, 5.1, 15)"
-df[, "ce.par_phase"] <- "c(-1, -1, -1, 1, 2, 2, 2, -1, -1, -1, -1, -1, -1, -1, -1)"
+df[, "co.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65,0.1,0.1)"
+df[, "ce.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1','CV_young_Fem_GP_1','CV_old_Fem_GP_1', 'LnQ_base_Survey(2)')"
+df[, "ce.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65, 0.1, 0.1, 0)"
+df[, "ce.par_phase"] <- "c(-1, -1, -1, 1, 2, 2, 2, -1, -1, 1)"
 
 df[, grep("sl", names(df), value = TRUE)] <- NULL
+
 df[, grep("sa\\.[[:alpha:]]*\\.2", names(df), value = TRUE)] <- NULL
 df[,"sc.years.1"] <- 100
 df[,"sc.Nsamp_lengths.1"]  <- 250
 df[,"sc.Nsamp_ages.1"] <- 250
-df[, "scenarios"] <- c("piner_250")
+df[, "scenarios"] <- c("piner_250_less_bins_con_sel")
 df[, "bias_adjust"] <- FALSE
 df[, "hess_always"] <- FALSE
 om_path <- normalizePath(file.path('mod_files', 'cod-om-new-bins'), winslash = "/")
 df[,"om"] <- om_path
-df[,"em"] <- system.file("extdata", "models", "cod-em", package = "ss3sim")
+df[,"em"] <- normalizePath(file.path('mod_files', 'cod-em-constant-sel'), winslash = "/")
 
 df <- rbind(df,df)
 # add the second scenario
-df[2, "scenarios"] <- "piner_4000"
+df[2, "scenarios"] <- "piner_4000_less_bins_con_sel"
 df[2,"sc.Nsamp_lengths.1"] <- 4000 
 df[2, "sc.Nsamp_ages.1"] <- 4000
 
@@ -100,7 +122,7 @@ names(res) <-  c("scalar", "ts")
 
 # Check EM convergence -----
 # make sure aren't giant
-res$scalar[res$scalar$model_run == "em","max_grad"] > 1
+res$scalar[res$scalar$model_run == "em",c("scenario", "max_grad")]
 # look at params on bounds
 # on iteration has a big gradient, but SSB doesn't look that off.
 
@@ -141,4 +163,6 @@ g_boxplot <- plot_boxplot(growth_error_tidy,
                           y = "Relative_Error",
                           horiz = "Parameter")
 g_boxplot + theme_classic(base_size = 15)
+
+# make selectivity plots, eventually.
 
