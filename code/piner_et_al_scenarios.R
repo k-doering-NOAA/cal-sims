@@ -2,8 +2,8 @@
 
 # Load packages, scripts, set options ----
 
-# devtools::install_github("ss3sim/ss3sim@bb3ebc0")
-# devtools::install_github("r4ss/r4ss@9ed9543")
+# devtools::install_github("ss3sim/ss3sim@9d147a5")
+# devtools::install_github("r4ss/r4ss@2e5f0d5")
 library(ss3sim)
 library(r4ss)
 library(dplyr)
@@ -24,7 +24,12 @@ dat <- SS_readdat(file.path(mod_files_path, "cod-om-new-bins", "codOM.dat"),
                   verbose = FALSE)
 dat$minimum_size <- 1
 dat$maximum_size <- 71
-dat$lbin_vector <- seq(11, 71, by = 3)
+dat$lbin_vector <- seq(11, 71, by = 1)
+dat$N_lbins <- length(dat$lbin_vector)
+dat$lencomp <- dat$lencomp[,1:6]
+new_lencomp <- as.data.frame(matrix(data = 1, nrow = nrow(dat$lencomp), ncol = dat$N_lbins))
+dat$lencomp <- cbind(dat$lencomp, new_lencomp)
+colnames(dat$lencomp)[7:ncol(dat$lencomp)] <- paste0("l", dat$lbin_vector)
 SS_writedat(dat, outfile = file.path(mod_files_path, "cod-om-new-bins", "codOM.dat"), 
             overwrite = TRUE, verbose = FALSE)
 # modify selectivity pattern for om
@@ -62,12 +67,13 @@ df[, "ce.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R
 df[, "ce.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65, 0.1, 0.1, 0)"
 df[, "ce.par_phase"] <- "c(-1, -1, -1, 1, 2, 2, 2, -1, -1, 1)"
 
-df[, grep("sl", names(df), value = TRUE)] <- NULL
+# keep the length samples
+#df[, grep("sl", names(df), value = TRUE)] <- NULL
 
 df[, grep("sa\\.[[:alpha:]]*\\.2", names(df), value = TRUE)] <- NULL
-df[,"sc.years.1"] <- 100
-df[,"sc.Nsamp_lengths.1"]  <- 250
-df[,"sc.Nsamp_ages.1"] <- 250
+# df[,"sc.years.1"] <- 100
+# df[,"sc.Nsamp_lengths.1"]  <- 250
+# df[,"sc.Nsamp_ages.1"] <- 250
 df[, "scenarios"] <- c("piner_250_less_bins_con_sel")
 df[, "bias_adjust"] <- FALSE
 df[, "hess_always"] <- FALSE
@@ -78,11 +84,26 @@ df[,"em"] <- normalizePath(file.path('mod_files', 'cod-em-constant-sel'), winsla
 df <- rbind(df,df)
 # add the second scenario
 df[2, "scenarios"] <- "piner_4000_less_bins_con_sel"
-df[2,"sc.Nsamp_lengths.1"] <- 4000 
-df[2, "sc.Nsamp_ages.1"] <- 4000
+# df[2,"sc.Nsamp_lengths.1"] <- 4000 
+# df[2, "sc.Nsamp_ages.1"] <- 4000
+
+# create scenarios that rebin the data
+df <- rbind(df,df, df[1,])
+df[3, "scenarios"] <- "rebin_no"
+df[4, "scenarios"] <- "rebin_by_3"
+df[5, "scenarios"] <- "rebin_by_6"
 
 # piner et al sample size is 250, 500, 1000, 2000, and 4000 individ-uals). Note these
 # were aonly taken for 1 year o f data.
+df[3,"cb.bin_vector"] <- "seq(11, 71, by = 1)"
+df[4,"cb.bin_vector"] <- "seq(11, 71, by = 3)"
+df[5, "cb.bin_vector"] <- "seq(11, 71, by = 6)"
+df[, "cb.lbin_method"] <- 2
+
+# leave the population bin width as in the model for now:
+df[, "cb.pop_binwidth"] <- 1
+df[, "cb.pop_minimum_size"] <- 1
+df[, "cb.pop_maximum_size"] <- 71
 
 # Run simulations --------------------------------------------------------------
 #run ss3sim in a different directory, but make sure to reset the wd on exit.
