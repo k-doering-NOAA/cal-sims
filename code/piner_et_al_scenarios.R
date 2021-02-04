@@ -2,8 +2,8 @@
 
 # Load packages, scripts, set options ----
 
-# devtools::install_github("ss3sim/ss3sim@9d147a5")
-# devtools::install_github("r4ss/r4ss@2e5f0d5")
+devtools::install_github("ss3sim/ss3sim@issue_286")
+devtools::install_github("r4ss/r4ss@2e5f0d5")
 library(ss3sim)
 library(r4ss)
 library(dplyr)
@@ -66,44 +66,75 @@ df[, "co.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65,0.1,0.1)"
 df[, "ce.par_name"] <- "c('NatM_p_1_Fem_GP_1','SR_BH_steep','SR_sigmaR','SR_LN(R0)','L_at_Amin_Fem_GP_1','L_at_Amax_Fem_GP_1','VonBert_K_Fem_GP_1','CV_young_Fem_GP_1','CV_old_Fem_GP_1', 'LnQ_base_Survey(2)')"
 df[, "ce.par_int"] <- "c(0.3, 0.75, 0.6, 9, 3, 50, 0.3/1.65, 0.1, 0.1, 0)"
 df[, "ce.par_phase"] <- "c(-1, -1, -1, 1, 2, 2, 2, -1, -1, 1)"
+# get rid of fishery length samples
+df[, "sl.years.1"] <- NA
+df[, "sl.Nsamp.1"] <- NA
+df[, "sa.Nsamp.2"] <- NA
+df[, "sa.years.2"] <- NA
+df[, "sa.Nsamp.2"] <- 50
+df[, "sa.years.2"] <- "26:100"
 
 # keep the length samples
 #df[, grep("sl", names(df), value = TRUE)] <- NULL
 
+df[,"cb.bin_vector"] <- "seq(11, 71, by = 1)"
 df[, grep("sa\\.[[:alpha:]]*\\.2", names(df), value = TRUE)] <- NULL
-# df[,"sc.years.1"] <- 100
-# df[,"sc.Nsamp_lengths.1"]  <- 250
-# df[,"sc.Nsamp_ages.1"] <- 250
-df[, "scenarios"] <- c("piner_250_less_bins_con_sel")
+df[,"sc.years.1"] <- 100
+df[,"sc.Nsamp_lengths.1"]  <- 250
+df[,"sc.Nsamp_ages.1"] <- 250
+df[, "scenarios"] <- c("bins_1_250_cal")
 df[, "bias_adjust"] <- FALSE
 df[, "hess_always"] <- FALSE
 om_path <- normalizePath(file.path('mod_files', 'cod-om-new-bins'), winslash = "/")
 df[,"om"] <- om_path
 df[,"em"] <- normalizePath(file.path('mod_files', 'cod-em-constant-sel'), winslash = "/")
-
-df <- rbind(df,df)
-# add the second scenario
-df[2, "scenarios"] <- "piner_4000_less_bins_con_sel"
-# df[2,"sc.Nsamp_lengths.1"] <- 4000 
-# df[2, "sc.Nsamp_ages.1"] <- 4000
-
-# create scenarios that rebin the data
-df <- rbind(df,df, df[1,])
-df[3, "scenarios"] <- "rebin_no"
-df[4, "scenarios"] <- "rebin_by_3"
-df[5, "scenarios"] <- "rebin_by_6"
-
-# piner et al sample size is 250, 500, 1000, 2000, and 4000 individ-uals). Note these
-# were aonly taken for 1 year o f data.
-df[3,"cb.bin_vector"] <- "seq(11, 71, by = 1)"
-df[4,"cb.bin_vector"] <- "seq(11, 71, by = 3)"
-df[5, "cb.bin_vector"] <- "seq(11, 71, by = 6)"
-df[, "cb.lbin_method"] <- 2
-
 # leave the population bin width as in the model for now:
 df[, "cb.pop_binwidth"] <- 1
 df[, "cb.pop_minimum_size"] <- 1
 df[, "cb.pop_maximum_size"] <- 71
+df[, "cb.lbin_method"] <- 2
+
+
+df <- rbind(df,df)
+df <- rbind(df, df, df, df) # 8 scenarios
+# add the second scenario
+df[2, "scenarios"] <- "bins_1_4000_cal"
+#df[2, "cb.bin_vector"] <- "seq(11, 71, by = 1)" # don't need this line, already set
+df[2,"sc.Nsamp_lengths.1"] <- 4000
+df[2, "sc.Nsamp_ages.1"] <- 4000
+# 3rd scen
+df[3, "scenarios"] <- "bins_3_250_cal"
+df[3,"cb.bin_vector"] <- "seq(11, 71, by = 3)"
+# 4th scen
+df[4, "scenarios"] <- "bins_3_4000_cal"
+df[4,"cb.bin_vector"] <- "seq(11, 71, by = 3)"
+df[4,"sc.Nsamp_lengths.1"] <- 4000
+df[4, "sc.Nsamp_ages.1"] <- 4000
+# 5th scen
+df[5, "scenarios"] <- "bins_6_250_cal"
+df[5, "cb.bin_vector"] <- "seq(11, 71, by = 6)"
+# 6th scen
+df[6, "scenarios"] <- "bins_6_4000_cal"
+df[6, "cb.bin_vector"] <- "seq(11, 71, by = 6)"
+df[6,"sc.Nsamp_lengths.1"] <- 4000
+df[6, "sc.Nsamp_ages.1"] <- 4000
+# 7 scen: marginals only
+df[7, "scenarios"] <- "bins_1_250_marg"
+df[7:8, grep("sc\\.", names(df), value = TRUE)] <- NA
+df[7, "sl.Nsamp.1"] <- 250
+df[7, "sl.years.1"] <- 100
+df[7, "sa.Nsamp.2"] <- 250
+df[7, "sa.years.2"] <- 100
+# 8 scen
+df[8, "scenarios"] <- "bins_1_4000_marg"
+df[8, "sl.Nsamp.1"] <- 4000
+df[8, "sl.years.1"] <- 100
+df[8, "sa.Nsamp.2"] <- 4000
+df[8, "sa.years.2"] <- 100
+
+# piner et al sample size is 250, 500, 1000, 2000, and 4000 individ-uals). Note these
+# were aonly taken for 1 year o f data.
+
 
 # Run simulations --------------------------------------------------------------
 #run ss3sim in a different directory, but make sure to reset the wd on exit.
