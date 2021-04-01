@@ -33,19 +33,6 @@ df[2, "si.sds_obs.2"] <- 0.001
 out <- file.path("results_simple_cod")
 dir.create(out)
 
-#run ss3sim in a different directory, but make sure to reset the wd on exit.
-# made this into a function mostly so that changing back the wd is not forgotten!
-
-# ' use run ss3sim when changing wd
-#' @param results_wd The working directory to run the ss3sim analysis in
-#' @noRd
-run_analysis <- function(iter_vec, simdf, results_wd) {
-  wd <- getwd()
-  setwd(results_wd)
-  on.exit(setwd(wd), add = TRUE)
-  scen_name <- run_ss3sim(iterations = iter_vec, simdf = simdf)
-}
-
 scen_name <- run_analysis(iter_vec = 1:10,
                           simdf = df,
                           results_wd = out)
