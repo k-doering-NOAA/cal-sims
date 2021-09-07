@@ -1,5 +1,5 @@
-# 
-
+#' Modify the default ss3sim model
+#'
 modify_model <- function(input_mod = "cod", life_history = "flatfish", 
                          out_path = getwd()) {
   life_history <- match.arg(arg = life_history,
