@@ -10,6 +10,8 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
+source("code/utils.R")
+
 # create folders (if dont exist) ----
 out <- "results_add_CAAL"
 dir.create(out)
@@ -189,46 +191,83 @@ names(res) <-  c("scalar", "ts")
 # Check EM convergence -----
 # make sure aren't giant
 res$scalar[res$scalar$model_run == "em",c("scenario", "max_grad")]
+
+# check relative SSB
+calc_SSB <- res$ts %>%
+  select(iteration, scenario, year, model_run, SpawnBio)
+OM_vals <- calc_SSB %>% 
+  filter(model_run == "om") %>% 
+  rename(SpawnBio_OM = SpawnBio)
+EM_vals <- calc_SSB %>% 
+  filter(model_run == "em") %>% 
+  rename(SpawnBio_EM = SpawnBio)
+bind_vals <- full_join(EM_vals, OM_vals, by = c("iteration", "scenario", "year")) %>% 
+  mutate(SSB_ratio = SpawnBio_EM/SpawnBio_OM)
+filter_SSB <- bind_vals %>% 
+  filter(SSB_ratio > 3 | SSB_ratio < 0.33) # standards more lax
+not_converged <- unique(filter_SSB[,c("iteration", "scenario")])
+nrow(not_converged) #23 by these standards, kind of high.
+
+
+# remove iterations that aren't converged
+
+res_converged <- lapply(res, function(x, not_converged) {
+  converged <- dplyr::anti_join(x, not_converged, by = c("iteration", "scenario"))
+  converged
+}, not_converged = not_converged)
+
 # look at params on bounds
 # on iteration has a big gradient, but SSB doesn't look that off.
 
 #some params are stuck low, which may be an issue.
 # looks like it is true that these params aren't on bounds, but are fairly low -
 # I don't think this should be an issue, tho?
-res$scalar[res$scalar$model_run == "em",
+res$scalar[res$scalar$model_run == "em" & !is.na(res$scalar$params_on_bound),
    c("iteration", "scenario", "params_on_bound", "params_stuck_low",
      "params_stuck_high")]
 
 # Look at SSB - how off is it? - tracking pretty well, so these sims aren't so bad.
-ggplot(dat = res$ts, aes(x = year, y = SpawnBio)) +
-  geom_line(aes(color = model_run)) +
-  facet_grid(rows = vars(scenario), cols = vars(iteration))
+# ggplot(dat = res$ts, aes(x = year, y = SpawnBio)) +
+#   geom_line(aes(color = model_run)) +
+#   facet_grid(rows = vars(scenario), cols = vars(iteration))
+# # some look way off, so probably want to filter out.
+
 
 # make an ss output plot for reference to get a feel fror how these sims ran....
 
 # make plots ------
 plot_path <- file.path(out, "plots")
 dir.create(plot_path)
-scalar_dat_wide <- convert_to_wide(res$scalar)
-ts_dat_wide <- convert_to_wide(res$ts)
+scalar_dat_wide <- convert_to_wide(res_converged$scalar)
+ts_dat_wide <- convert_to_wide(res_converged$ts)
 scalar_dat_wide <- calculate_re(scalar_dat_wide, add = TRUE)
 ts_dat_wide <- calculate_re(ts_dat_wide, add = TRUE)
 
+# plotting function for relative error
+
 # get error for each scenario ----
-growth_error <- scalar_dat_wide[, c("ID", "scenario","VonBert_K_Fem_GP_1_re", 
-                               "L_at_Amin_Fem_GP_1_re", "L_at_Amax_Fem_GP_1_re")]
+g_boxplot <- plot_rel_error(
+  parameters = c("VonBert_K_Fem_GP_1_re", "L_at_Amin_Fem_GP_1_re",
+                 "L_at_Amax_Fem_GP_1_re"), 
+  scalar_dat_wide = scalar_dat_wide)
+g_boxplot
+ggsave(file.path(plot_path, "rel_error_growth.png"), plot = g_boxplot,
+       width = 12, height = 8, units = "in")
 
-growth_error$scenario_fac <- factor(growth_error$scenario, levels = unique(growth_error$scenario))
-growth_error_tidy <- growth_error %>% 
-  select(ID, scenario_fac, scenario, VonBert_K_Fem_GP_1_re, 
-         L_at_Amin_Fem_GP_1_re, L_at_Amax_Fem_GP_1_re) %>% 
-  gather("Parameter", "Relative_Error", 4:6)
+# get error in key pop quantities -----
+p_boxplot <- plot_rel_error(
+  parameters = c("SSB_MSY_re","TotYield_MSY_re", "SSB_Unfished_re"), 
+  scalar_dat_wide = scalar_dat_wide)
+p_boxplot
+ggsave(file.path(plot_path, "rel_error_pop.png"), plot = p_boxplot,
+       width = 12, height = 8, units = "in")
 
-g_boxplot <- plot_boxplot(growth_error_tidy,
-                          x = "scenario",
-                          y = "Relative_Error",
-                          horiz = "Parameter")
-g_boxplot + theme_classic(base_size = 15)
+# make selectivity plots, eventually. ---
 
-# make selectivity plots, eventually.
+s_boxplot <- plot_rel_error(parameters = c("Size_DblN_ascend_se_Survey_2_re", 
+                              "Size_DblN_peak_Survey_2_re"), scalar_dat_wide = scalar_dat_wide)
+s_boxplot
+ggsave(file.path(plot_path, "rel_error_sel.png"), plot = s_boxplot,
+       width = 12, height = 8, units = "in")
+
 
