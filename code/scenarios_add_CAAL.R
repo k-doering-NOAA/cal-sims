@@ -57,6 +57,11 @@ dir.create(mod_files_path)
 #             verbose = FALSE, overwrite = TRUE)
 
 # create the df scenarios ----
+
+# TODO: add in a good time series of lengths that can estimate selectivity well
+# if the lengths are informing growth, make the data more realistic by decreasing sample size
+# then, add in the CAAL scenarios and see what this does to growth
+
 # At first, just set up 1 scenario 
 
 df <- setup_scenarios_defaults()
