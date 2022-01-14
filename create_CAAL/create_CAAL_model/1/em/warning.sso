@@ -1,0 +1,16 @@
+#V3.30.16.00;_2020_09_03;_safe;_Stock_Synthesis_by_Richard_Methot_(NOAA)_using_ADMB_12.2
+#Stock Synthesis (SS) is a work of the U.S. Government and is not subject to copyright protection in the United States.
+#Foreign copyrights may apply. See copyright.txt for more information.
+Fri Jan 14 10:24:53 2022
+
+This model has just one settlement event; recommend changing to recr_dist_method 4 which takes no recr_dist parameters
+ Are you sure you want so few early recrdevs? Better to include in range of main recdevs 5
+fleet: 1 age selex range min read is: 0.1; SS expected an integer and will convert 
+fleet: 1 age selex range max read is: 100; is >nages; SS will convert 
+fleet: 2 age selex range min read is: 0.1; SS expected an integer and will convert 
+fleet: 2 age selex range max read is: 100; is >nages; SS will convert 
+Fleet:_1 min bound on parameter for size at peak is 5.08; should be >= midsize bin 2 (11.5)
+Fleet:_1 min bound on parameter for size at peak is 5.08; which is < min databin (20), so illogical.
+Fleet:_2 min bound on parameter for size at peak is 4.18; should be >= midsize bin 2 (11.5)
+Fleet:_2 min bound on parameter for size at peak is 4.18; which is < min databin (20), so illogical.
+ N warnings: 10
